@@ -1,10 +1,18 @@
 import React,{Component} from 'react'
 import './App.css';
+import Clarifai,{version} from 'clarifai';
 import Navigation from './components/Navigation/navigation';
 import Logo from './components/Logo/Logo'
 import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm'
 import Rank from './components/Rank/Rank'
 import Particles from 'react-particles-js';
+import FaceRecognization from './components/FaceRecognization/FaceRecognization'
+
+
+const app = new Clarifai.App({
+  apiKey: '8557edecb35341d3a53c529149937f7a'
+
+});
 
 const particlesOptions ={
   interactivity: {
@@ -59,15 +67,28 @@ class App extends Component {
     super();
     this.state ={
       input: '',
+      imageUrl:''
     }
   }
 
 onInputChange = (event) => {
-  console.log(event.target.value);
+  this.setState({input: event.target.value});
 }
 
 onButtonSubmit =() => {
-  console.log('click')
+  this.setState({imageUrl: this.state.input});
+  console.log(this.state.imageUrl);
+  app.models.predict(
+    {id:'f76196b43bbd45c99b4f3cd8e8b40a8a', version:{version}}, 
+    this.state.input)
+    .then(
+      function(response) {
+        console.log(response.outputs[0].data.regions[0].region_info.bounding_box)
+      },
+      function(err) {
+        // there was an error
+      }
+);
 }
 
   render(){
@@ -86,9 +107,10 @@ onButtonSubmit =() => {
         <ImageLinkForm 
         onInputChange={this.onInputChange} 
         onButtonSubmit={this.onButtonSubmit}/>
+        <FaceRecognization imageUrl={this.state.imageUrl}/>
         {/*    
         
-        <FaceRecognization />
+        
         <header className="App-header">
           
         </header> */}
