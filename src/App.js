@@ -67,29 +67,51 @@ class App extends Component {
     super();
     this.state ={
       input: '',
-      imageUrl:''
+      imageUrl:'',
+      box: {}
     }
   }
 
-onInputChange = (event) => {
-  this.setState({input: event.target.value});
-}
 
-onButtonSubmit =() => {
-  this.setState({imageUrl: this.state.input});
-  console.log(this.state.imageUrl);
-  app.models.predict(
-    {id:'f76196b43bbd45c99b4f3cd8e8b40a8a', version:{version}}, 
-    this.state.input)
-    .then(
-      function(response) {
-        console.log(response.outputs[0].data.regions[0].region_info.bounding_box)
-      },
-      function(err) {
-        // there was an error
-      }
-);
-}
+  calculateFaceLocation = (data) => {
+    const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
+    const image = document.getElementById('inputimage');
+    const width =Number(image.width);
+    const height =Number(image.height);
+    return {
+      leftCol : clarifaiFace.left_col * width ,
+      topRow : clarifaiFace.top_row*height ,
+      rightCol: width - (clarifaiFace.right_col*width) ,
+      bottomRow: height - (clarifaiFace.bottom_row* height)
+    }
+  }
+
+  displayFaceBox = (box) => {
+    console.log(box);
+    this.setState({box: box});
+  }
+
+  onInputChange = (event) => {
+    this.setState({input: event.target.value});
+  }
+
+  onButtonSubmit =() => {
+    this.setState({imageUrl: this.state.input});
+    console.log(this.state.imageUrl);
+    app.models.predict(
+      {id:'f76196b43bbd45c99b4f3cd8e8b40a8a', version:{version}}, 
+      this.state.input)
+      .then(response => this.displayFaceBox( this.calculateFaceLocation(response) ))
+        // function(response) {
+        //   this.calculateFaceLocation(response)
+        //   console.log(response.outputs[0].data.regions[0].region_info.bounding_box)
+        // },
+        .catch(err => console.log(err))
+        // function(err) {
+        //   // there was an error
+        // }
+  
+  }
 
   render(){
     return (
@@ -107,7 +129,7 @@ onButtonSubmit =() => {
         <ImageLinkForm 
         onInputChange={this.onInputChange} 
         onButtonSubmit={this.onButtonSubmit}/>
-        <FaceRecognization imageUrl={this.state.imageUrl}/>
+        <FaceRecognization box={this.state.box} imageUrl={this.state.imageUrl}/>
         {/*    
         
         
