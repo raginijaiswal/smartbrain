@@ -8,6 +8,7 @@ import Rank from './components/Rank/Rank'
 import Particles from 'react-particles-js';
 import FaceRecognization from './components/FaceRecognization/FaceRecognization'
 import Signin from './components/Signin/Signin'
+import Register from './components/Register/Register'
 
 
 const app = new Clarifai.App({
@@ -69,27 +70,50 @@ class App extends Component {
     this.state ={
       input: '',
       imageUrl:'',
-      box: {},
-      route: 'signin'
+      box: [],
+      route: 'signin',
+      isSignedIn: false
     }
   }
 
-
   calculateFaceLocation = (data) => {
-    const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
+    // const clarifaiFace =data.outputs[0].data.regions[0].region_info.bounding_box;
     const image = document.getElementById('inputimage');
     const width =Number(image.width);
     const height =Number(image.height);
-    return {
-      leftCol : clarifaiFace.left_col * width ,
-      topRow : clarifaiFace.top_row*height ,
-      rightCol: width - (clarifaiFace.right_col*width) ,
-      bottomRow: height - (clarifaiFace.bottom_row* height)
-    }
+    const clarifaifacesRegions = data.outputs[0].data.regions;
+    const boundingBoxes = clarifaifacesRegions.map(region =>{
+      const clarifaiFace =region.region_info.bounding_box;
+      return {
+        leftCol : clarifaiFace.left_col * width ,
+        topRow : clarifaiFace.top_row*height ,
+        rightCol: width - (clarifaiFace.right_col*width) ,
+        bottomRow: height - (clarifaiFace.bottom_row* height)
+      }
+    })
+    // return {
+    //   leftCol : clarifaiFace.left_col * width ,
+    //   topRow : clarifaiFace.top_row*height ,
+    //   rightCol: width - (clarifaiFace.right_col*width) ,
+    //   bottomRow: height - (clarifaiFace.bottom_row* height)
+    // }
+    return boundingBoxes;
   }
 
+  // calculateFaceLocation = (data) => {
+  //   const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
+  //   const image = document.getElementById('inputimage');
+  //   const width =Number(image.width);
+  //   const height =Number(image.height);
+  //   return {
+  //     leftCol : clarifaiFace.left_col * width ,
+  //     topRow : clarifaiFace.top_row*height ,
+  //     rightCol: width - (clarifaiFace.right_col*width) ,
+  //     bottomRow: height - (clarifaiFace.bottom_row* height)
+  //   }
+  // }
+
   displayFaceBox = (box) => {
-    console.log(box);
     this.setState({box: box});
   }
 
@@ -102,7 +126,7 @@ class App extends Component {
     console.log(this.state.imageUrl);
     app.models.predict(
       {id:'f76196b43bbd45c99b4f3cd8e8b40a8a', version:{version}}, 
-      this.state.input)
+       this.state.input)
       .then(response => this.displayFaceBox( this.calculateFaceLocation(response) ))
         // function(response) {
         //   this.calculateFaceLocation(response)
@@ -115,7 +139,18 @@ class App extends Component {
   
   }
 
+  onRouteChange = (route) =>{
+    // this.setState({route: route})
+    if(route === 'signout'){
+      this.setState({isSignedIn: false})
+    } else if(route === 'home'){
+      this.setState({isSignedIn: true})
+    }
+    this.setState({route: route})
+  }
+
   render(){
+    const { isSignedIn, imageUrl, route, box } = this.state;
     return (
       <div className="App">
          
@@ -125,16 +160,31 @@ class App extends Component {
           params = {particlesOptions}
         />
         
-        <Navigation />
-        { this.state.route === 'signin' ?
-        <Signin />
-        :<div> <Logo style={{zIndex:'1'}}/>
-        <Rank />
-        <ImageLinkForm 
-        onInputChange={this.onInputChange} 
-        onButtonSubmit={this.onButtonSubmit}/>
-        <FaceRecognization box={this.state.box} imageUrl={this.state.imageUrl}/>
-        </div>}
+        <Navigation isSignedIn={isSignedIn} onRouteChange={this.onRouteChange}/>
+        {/* { route === 'signin' ? */}
+        {route === 'home' 
+          ? <div> 
+              <Logo />
+              <Rank />
+              <ImageLinkForm 
+              onInputChange={this.onInputChange} 
+              onButtonSubmit={this.onButtonSubmit}/>
+              <FaceRecognization box={box} imageUrl={imageUrl}/>
+            </div>
+          :(
+            route === 'signin'
+            ? <Signin onRouteChange={this.onRouteChange}/>
+            : <Register onRouteChange={this.onRouteChange}/>
+            )
+        // <Signin onRouteChange={this.onRouteChange}/>
+        // :<div> <Logo style={{zIndex:'1'}}/>
+        // <Rank />
+        // <ImageLinkForm 
+        // onInputChange={this.onInputChange} 
+        // onButtonSubmit={this.onButtonSubmit}/>
+        // <FaceRecognization box={box} imageUrl={this.state.imageUrl}/>
+        // </div>}
+        }
         {/*    
         
         
